@@ -94,10 +94,17 @@ Args:
     data = {"username": [user_name], "key": [hash_password(passkey)], "url": [link]}
     return pl.DataFrame(data)
 
-if __name__ == "__main__":
+
+def main()->None:
+    """The main"""
     greeting()
     user, pass_word, urls = get_user_data()
     print("""creating dataframe....""")
     sleep(3)
     df = create_dataframe(user, pass_word, urls)
     print(df)
+
+
+if __name__ == "__main__":
+    main()
+
