@@ -4,7 +4,8 @@ import sys
 import getpass
 from time import sleep
 import polars as pl
-from hash import hash_password #type: ignore
+from src.hash.hash import hash_password #type: ignore
+from src.encrypt import encrypt,decrypt
 
 def greeting()->None:
     """Title to show"""
@@ -12,6 +13,46 @@ def greeting()->None:
     print("------------------------")
     os.system("echo AtticaSoft '(c)' 2024")
 
+def clear()->None:
+    """Clears the terminal"""
+    if os.name == "nt":
+        os.system("cls")
+    os.system("clear")
+
+
+def get_password()->None:
+    """Gets the password from the user"""
+    password = getpass.getpass("Enter the password: (press 'q' to exit) ")
+
+    if password.lower() == 'q':
+        answer = input("Are you sure you want to exit the application? [y/n]")
+        if answer.lower() == 'y':
+            print("Exiting the application....")
+            sleep(1)
+            sys.exit()
+        clear()
+
+    password2 = getpass.getpass("Re-enter the password:  (press 'q' to exit)")
+
+    if password.lower() == 'q':
+        print("Exiting the application....")
+        sleep(1)
+        sys.exit()
+
+    if password == password2:
+        print("Password Matched!")
+        return password
+    return "Passwords do not match. Please try again."
+
+
+
+def encrypt_password(password:str)->bytes:
+    """Encrypt the password for local storage"""
+    return encrypt.encrypt_password(password)
+
+def decrypt_password(encrypted:bytes)->str:
+    """Decrypt the password for local usage"""
+    return decrypt.decrypt_password(encrypted)
 
 def get_user_data():
     """Prompts the user for username, password, and URL, with confirmation.
@@ -31,48 +72,27 @@ def get_user_data():
     
     """
     while True:
-        username = input("Enter your username: ")
-        os.system("clear")
+        service = input("Enter the service: ")
+        clear()
 
         while True:
-            password = getpass.getpass("Enter the password: (press 'q' to exit) ")
+            password = get_password()
+            break
+        clear()
+        username = input("Enter your username: ")
+        clear()
 
-            if password.lower() == 'q':
-                answer = input("Are you sure you want to exit the application? [y/n]")
-                if answer.lower() == 'y':
-                    print("Exiting the application....")
-                    sleep(1)
-                    sys.exit()
-                os.system("clear")
-                continue
-
-            password2 = getpass.getpass("Re-enter the password:  (press 'q' to exit)")
-
-            if password.lower() == 'q':
-                print("Exiting the application....")
-                sleep(1)
-                sys.exit()
-          
-            if password == password2:
-                break
-            print("Passwords do not match. Please try again.")
-
-        url = input("Enter the URL: ")
-        os.system("clear")
-
-        print(f"""Confirm if the
-              Username: {username} and the 
-              Url: {url} is correct [y/n].
-              Use 'q' to quit""")
+        print(f"""Save the {service}'s password with user: {username} ? [y/n]. """)
         response = input().lower()
         if response == "y":
-            return username, password, url
+            print("saved the data!")
+            return service, password, username
         if response == "q":
             print("Exiting the application....")
             sleep(3)
             sys.exit()
 
-def create_dataframe(user_name:str, passkey:str, link:str)->pl.DataFrame:
+def create_dataframe(service:str, passkey:str, user_name:str)->pl.DataFrame:
     """Creates a Polars DataFrame from the given data.
 
 Args:
@@ -91,7 +111,7 @@ Args:
 
     
     """
-    data = {"username": [user_name], "key": [hash_password(passkey)], "url": [link]}
+    data = {"service": [service], "key": [hash_password(passkey)], "user": [user_name]}
     return pl.DataFrame(data)
 
 
@@ -103,8 +123,10 @@ def main()->None:
     sleep(3)
     df = create_dataframe(user, pass_word, urls)
     print(df)
-
+    sleep(1)
+    print(encrypt_password(pass_word))
+    print("**********************")
+    print(decrypt_password(pass_word))
 
 if __name__ == "__main__":
     main()
-
