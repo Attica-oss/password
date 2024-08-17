@@ -21,7 +21,7 @@ jobs:
     - name: Analysing the code with pylint
       run: |
         pylint $(git ls-files '*.py')
-    - name: Smelly Python: Smell My PR
+    - name: Smelly Python
       uses: smelly-python/smell-my-pr@v1.0.0
       with:
         # The folder containing python files for pylint.
