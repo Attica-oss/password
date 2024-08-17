@@ -24,8 +24,6 @@ jobs:
     - name: Smelly Python
       uses: smelly-python/smell-my-pr@v1.0.0
       with:
-        # The folder containing python files for pylint.
-        command: # default is smelly-python -d src
-        # Github token
-        github-token: # default is 
+        command: smelly-python -d src
+
           
