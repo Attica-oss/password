@@ -1,13 +1,16 @@
 """Saves the data to a polars dataframe"""
-
+import os
 import sys
 import getpass
 from time import sleep
 import polars as pl
 from hash import hash_password #type: ignore
 
-
-
+def greeting()->None:
+    """Title to show"""
+    print("""Passkey Manager v.0.0.1""")
+    print("------------------------")
+    os.system("echo AtticaSoft '(c)' 2024")
 
 
 def get_user_data():
@@ -29,8 +32,33 @@ def get_user_data():
     """
     while True:
         username = input("Enter your username: ")
-        password = getpass.getpass("Enter your password: ")
+        os.system("clear")
+
+        while True:
+            password = getpass.getpass("Enter the password: (press 'q' to exit) ")
+
+            if password.lower() == 'q':
+                answer = input("Are you sure you want to exit the application? [y/n]")
+                if answer.lower() == 'y':
+                    print("Exiting the application....")
+                    sleep(1)
+                    sys.exit()
+                os.system("clear")
+                continue
+
+            password2 = getpass.getpass("Re-enter the password:  (press 'q' to exit)")
+
+            if password.lower() == 'q':
+                print("Exiting the application....")
+                sleep(1)
+                sys.exit()
+          
+            if password == password2:
+                break
+            print("Passwords do not match. Please try again.")
+
         url = input("Enter the URL: ")
+        os.system("clear")
 
         print(f"""Confirm if the
               Username: {username} and the 
@@ -63,15 +91,13 @@ Args:
 
     
     """
-    data = {"username": [user_name], "password": [hash_password(passkey)], "url": [link]}
+    data = {"username": [user_name], "key": [hash_password(passkey)], "url": [link]}
     return pl.DataFrame(data)
 
 if __name__ == "__main__":
-    print("""Passkey Manager v.0.0.1""")
-    print("""AtticaSoft (c) 2024""")
-    print("------------------------")
+    greeting()
     user, pass_word, urls = get_user_data()
     print("""creating dataframe....""")
     sleep(3)
-    df = create_dataframe(user, pass_word[5:], urls)
+    df = create_dataframe(user, pass_word, urls)
     print(df)
