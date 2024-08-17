@@ -126,7 +126,7 @@ def main()->None:
     sleep(1)
     print(encrypt_password(pass_word))
     print("**********************")
-    print(decrypt_password(pass_word))
+    # print(decrypt_password(pass_word))
 
 if __name__ == "__main__":
     main()
