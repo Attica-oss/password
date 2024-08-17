@@ -34,14 +34,10 @@ def hash_password(password:str)->str:
     salt = generate_salt()
 
     # Combine salt and password
-    salted_password = salt + password.encode('utf-8')
+    encoded_password = password.encode('utf-8')
 
     # Create an Argon2 password hasher
-    ph = argon2.PasswordHasher()
-    
-    # Hash the password
-    hashed_password = ph.hash(salted_password)
-
+    hashed_password = argon2.argon2_hash(encoded_password,salt)
 
     # Create a new SHA-256 hash object
     hash_object = hashlib.sha256(hashed_password)
