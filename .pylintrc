@@ -1,0 +1,3 @@
+[ignored]
+# Ignore import errors for specific modules
+ignored-modules = cryptography, pyargon2, polars
