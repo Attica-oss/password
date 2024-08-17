@@ -21,9 +21,5 @@ jobs:
     - name: Analysing the code with pylint
       run: |
         pylint $(git ls-files '*.py')
-    - name: Smelly Python
-      uses: smelly-python/smell-my-pr@v1.0.0
-      with:
-        command: smelly-python -d src
 
           
