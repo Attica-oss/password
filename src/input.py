@@ -1,133 +1,161 @@
-"""User Interface"""
-
 import os
 import sys
+from pathlib import Path
 import getpass
 from time import sleep
 import polars as pl
-from src.hash.hash import hash_password  # type: ignore
+from typing import Tuple, Optional
+import logging
+from dataclasses import dataclass
+
+# Assuming these modules exist in your project structure
+from src.hash.hash import hash_password
 from src.encrypt import encrypt, decrypt
+from src.pawnd.pawnd import pawned
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def greeting():
-    """Displays a title and options for the Passkey Manager."""
-    print("""
-Passkey Manager v.0.0.1
+# Configuration
+@dataclass
+class Config:
+    CSV_PATH: Path = Path("/home/gmoun/Project/hashfunction/src/key/saved_data.csv")
+
+config = Config()
+
+class PasswordManager:
+    def __init__(self):
+        self.df: Optional[pl.DataFrame] = None
+
+    def clear_screen(self):
+        os.system('cls' if os.name == 'nt' else 'clear')
+
+    def greeting(self):
+        print("""
+Passkey Manager v.0.0.2
 ---------------------------
 AtticaSoft (c) 2024
 
 Select an option:
 ----- 1. Add Entry
------ 2. Find Entry by Service (To Do)
------ 3. Exit Application
+----- 2. Find Entry by Service
+----- 3. Password Pwned?
+----- 4. Exit Application
 """)
 
+    def get_password(self, prompt: str = "Enter the password (press 'q' to exit): ") -> str:
+        while True:
+            password = getpass.getpass(prompt)
+            if password.lower() == "q":
+                self.exit_application()
+            
+            password2 = getpass.getpass("Re-enter the password: ")
+            
+            if password == password2:
+                return password
+            
+            print("Passwords do not match! Try again?")
+            if input("[y/n] ").lower() != "y":
+                self.exit_application()
 
-def clear_screen():
-    """Clears the terminal screen."""
-    if os.name == "nt":
-        os.system("cls")
-    else:
-        os.system("clear")
+    def encrypt_password(self, password: str) -> bytes:
+        return encrypt.encrypt_password(password)
 
+    def decrypt_password(self, encrypted: bytes) -> str:
+        return decrypt.decrypt_password(encrypted)
 
-def get_password(prompt="Enter the password (press 'q' to exit): "):
-    """Prompts the user for a password, handling exits and mismatches."""
-    while True:
-        password = getpass.getpass(prompt)
-        if password.lower() == "q":
-            print("Exiting the application....")
-            sleep(1)
-            sys.exit()
-
-        password2 = getpass.getpass("Re-enter the password: ")
-
-        if password == password2:
-            return password
-        print("Passwords do not match! Try again?")
-        choice = input("[y/n] ").lower()
-        if choice == "n":
-            print("Exiting the application....")
-            sleep(1)
-            sys.exit()
-        elif choice != "y":
-            print("Invalid answer: use [y/n]....")
-
-
-def encrypt_password(password: str) -> bytes:
-    """Encrypts the password for secure storage."""
-    return encrypt.encrypt_password(password)
-
-
-def decrypt_password(encrypted: bytes) -> str:
-    """Decrypts the encrypted password for display."""
-    return decrypt.decrypt_password(encrypted)
-
-
-def get_user_data():
-    """Prompts the user for service, username, and password, with confirmation.
-
-    Returns:
-        tuple: A tuple containing the service name, hashed password, and username.
-    """
-    while True:
-        clear_screen()
+    def get_user_data(self) -> Tuple[str, bytes, str, str]:
+        self.clear_screen()
         print("Add an entry")
         service = input("Enter the service: ")
-
-        clear_screen()
-        password = get_password()
-
-        clear_screen()
+        
+        self.clear_screen()
+        password = self.get_password()
+        
+        self.clear_screen()
         username = input("Enter your username: ")
-
+        
         print(f"Save the {service}'s password with user: {username}? [y/n]")
-        response = input().lower()
-        if response == "y":
+        if input().lower() == "y":
             hashed_password = hash_password(password)
-            return service, hashed_password, username
-        if response == "q":
-            print("Exiting the application....")
-            sleep(3)
-            sys.exit()
+            encrypted_password = self.encrypt_password(password)
+            return service, encrypted_password, hashed_password, username
+        else:
+            self.exit_application()
 
+    def create_dataframe(self, service: str, password: bytes, hashed_password: str, username: str) -> pl.DataFrame:
+        data = {
+            "service": [service],
+            "password": [password],
+            "hashed": [hashed_password],
+            "username": [username]
+        }
+        return pl.DataFrame(data)
 
-def create_dataframe(service: str, hashed_password: str, username: str) -> pl.DataFrame:
-    """Creates a Polars DataFrame from user data, storing password as a hash."""
-    data = {"service": [service], "password": [hashed_password], "username": [username]}
-    return pl.DataFrame(data)
-
-
-def main():
-    """The main function that runs the Passkey Manager."""
-    greeting()
-
-    while True:
+    def save_df_csv(self, df: pl.DataFrame) -> None:
         try:
-            choice = int(input("Select an option: "))
-            if choice == 1:
-                clear_screen()
-                user, hashed_password, urls = get_user_data()
-                print("Creating dataframe....")
-                sleep(3)
-                df = create_dataframe(user, hashed_password, urls)
-                print(df)
-                sleep(1)
-            elif choice == 2:
-                clear_screen()
-                print(NotImplementedError("Find Entry by Service Not Implemented Yet"))
-                sleep(1)
-            elif choice == 3:
-                clear_screen()
-                print("Exiting the application....")
-                sleep(1)
-                sys.exit()
+            if config.CSV_PATH.exists():
+                existing_df = pl.read_csv(config.CSV_PATH)
+                combined_df = pl.concat([existing_df, df])
             else:
-                raise ValueError("Invalid choice. Please select 1, 2, or 3.")
-        except ValueError as e:
-            print(e)
-            sleep(1)
+                combined_df = df
+            combined_df.write_csv(config.CSV_PATH)
+            logging.info(f"Data saved successfully to {config.CSV_PATH}")
+        except Exception as e:
+            logging.error(f"Error saving data: {e}")
+            print("An error occurred while saving data. Please check the logs.")
 
+    def find_entry(self, service: str) -> None:
+        try:
+            if self.df is None:
+                self.df = pl.read_csv(config.CSV_PATH)
+            
+            result = self.df.filter(pl.col("service") == service)
+            if result.shape[0] == 0:
+                print(f"No entry found for service: {service}")
+            else:
+                print(result.select(["service", "username"]))
+                # Note: We don't display the password for security reasons
+        except Exception as e:
+            logging.error(f"Error finding entry: {e}")
+            print("An error occurred while searching for the entry. Please check the logs.")
+
+    def check_pwned(self) -> None:
+        try:
+            result = pawned(str(config.CSV_PATH))
+            print(result)
+        except Exception as e:
+            logging.error(f"Error checking pwned passwords: {e}")
+            print("An error occurred while checking pwned passwords. Please check the logs.")
+
+    def exit_application(self):
+        print("Exiting the application....")
+        sleep(1)
+        sys.exit()
+
+    def run(self):
+        while True:
+            self.clear_screen()
+            self.greeting()
+            try:
+                choice = int(input("Select an option: "))
+                if choice == 1:
+                    service, password, hashed_password, username = self.get_user_data()
+                    df = self.create_dataframe(service, password, hashed_password, username)
+                    self.save_df_csv(df)
+                elif choice == 2:
+                    service = input("Enter the service name to search: ")
+                    self.find_entry(service)
+                elif choice == 3:
+                    self.check_pwned()
+                elif choice == 4:
+                    self.exit_application()
+                else:
+                    raise ValueError("Invalid choice. Please select 1, 2, 3 or 4.")
+            except ValueError as e:
+                print(e)
+                sleep(1)
 
 if __name__ == "__main__":
-    main()
+    password_manager = PasswordManager()
+    password_manager.run()
