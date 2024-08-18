@@ -15,9 +15,9 @@ def test_encryption_decryption():
     password = "test_password"
     encrypted = f.encrypt(password.encode())
     decrypted = f.decrypt(encrypted)
-    print(f"Original: {password}")
-    print(f"Encrypted: {encrypted}")
-    print(f"Decrypted: {decrypted.decode()}")
+    # print(f"Original: {password}")
+    # print(f"Encrypted: {encrypted}")
+    # print(f"Decrypted: {decrypted.decode()}")
     assert password == decrypted.decode()
 
-test_encryption_decryption()
+# test_encryption_decryption()
