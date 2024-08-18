@@ -44,15 +44,14 @@ def get_password(prompt="Enter the password (press 'q' to exit): "):
 
         if password == password2:
             return password
-        else:
-            print("Passwords do not match! Try again?")
-            choice = input("[y/n] ").lower()
-            if choice == "n":
-                print("Exiting the application....")
-                sleep(1)
-                sys.exit()
-            elif choice != "y":
-                print("Invalid answer: use [y/n]....")
+        print("Passwords do not match! Try again?")
+        choice = input("[y/n] ").lower()
+        if choice == "n":
+            print("Exiting the application....")
+            sleep(1)
+            sys.exit()
+        elif choice != "y":
+            print("Invalid answer: use [y/n]....")
 
 
 def encrypt_password(password: str) -> bytes:
@@ -87,7 +86,7 @@ def get_user_data():
         if response == "y":
             hashed_password = hash_password(password)
             return service, hashed_password, username
-        elif response == "q":
+        if response == "q":
             print("Exiting the application....")
             sleep(3)
             sys.exit()
