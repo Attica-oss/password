@@ -8,6 +8,7 @@ from typing import Tuple, Optional
 import logging
 from dataclasses import dataclass
 import polars as pl
+from polars.exceptions import ComputeError
 
 from src.hash.hash import hash_password
 from src.encrypt import encrypt, decrypt
@@ -36,45 +37,51 @@ class PasswordManager:
     def greeting(self):
         """Greeting message"""
         print("""
-Passkey Manager v.0.0.2
----------------------------
-AtticaSoft (c) 2024
+        Passkey Manager v.0.0.2
+        ---------------------------
+        AtticaSoft (c) 2024
 
-Select an option:
------ 1. Add Entry
------ 2. Find Entry by Service
------ 3. Password Pwned?
------ 4. Exit Application
-""")
+        Select an option:
+        ----- 1. Add Entry
+        ----- 2. Find Entry by Service
+        ----- 3. Password Pwned?
+        ----- 4. Exit Application
+        """)
 
     def get_password(self, prompt: str = "Enter the password (press 'q' to exit): ") -> str:
+        """Get the password from the user"""
         while True:
             password = getpass.getpass(prompt)
             if password.lower() == "q":
                 self.exit_application()
-            
+
             password2 = getpass.getpass("Re-enter the password: ")
-            
+
             if password == password2:
                 return password
-            
+
             print("Passwords do not match! Try again?")
             if input("[y/n] ").lower() != "y":
                 self.exit_application()
 
     def encrypt_password(self, password: str) -> bytes:
+        """Encrypt the password"""
         return encrypt.encrypt_password(password)
 
     def decrypt_password(self, encrypted: bytes) -> str:
+        """Decrypt the password"""
         return decrypt.decrypt_password(encrypted)
 
     def get_user_data(self) -> Tuple[str, bytes, str, str]:
         """
-        Retrieves user data for a new password entry, including the service, password, and username.
+        Retrieves user data for a new password entry,
+        including the service, password, and username.
         
-        Prompts the user to input the service, password, and username, and then confirms whether to save the entry.
+        Prompts the user to input the service, password,
+        and username, and then confirms whether to save the entry.
         
-        Returns a tuple containing the service, encrypted password, hashed password, and username if the user confirms.
+        Returns a tuple containing the service,
+        encrypted password, hashed password, and username if the user confirms.
         
         If the user declines, exits the application.
         
@@ -82,25 +89,25 @@ Select an option:
         None
         
         Returns:
-        Tuple[str, bytes, str, str]: A tuple containing the service, encrypted password, hashed password, and username.
+        Tuple[str, bytes, str, str]: A tuple containing the service,
+        encrypted password, hashed password, and username.
         """
         self.clear_screen()
         print("Add an entry")
         service = input("Enter the service: ")
-        
+
         self.clear_screen()
         password = self.get_password()
-        
+
         self.clear_screen()
         username = input("Enter your username: ")
-        
+
         print(f"Save the {service}'s password with user: {username}? [y/n]")
         if input().lower() == "y":
             hashed_password = hash_password(password)
             encrypted_password = self.encrypt_password(password)
             return service, encrypted_password, hashed_password, username
-        else:
-            self.exit_application()
+        self.exit_application()
 
     def create_dataframe(self,
                          service: str,
@@ -132,31 +139,48 @@ Select an option:
                 combined_df = df
             combined_df.write_csv(config.csv_path)
             logging.info("Data saved successfully to %s", config.csv_path)
-        except Exception as e:
-            logging.error(f"Error saving data: {e}")
+        except ComputeError as e:
+            logging.error("Error saving data: %s",e)
             print("An error occurred while saving data. Please check the logs.")
 
     def find_entry(self, service: str) -> None:
+        """
+        Finds an entry in the CSV file based on the service name.
+
+        Parameters:
+        service (str): The name of the service to search for.
+
+        Returns:
+        None
+        """
         try:
             if self.df is None:
                 self.df = pl.read_csv(config.csv_path)
-            
             result = self.df.filter(pl.col("service") == service)
             if result.shape[0] == 0:
                 print(f"No entry found for service: {service}")
             else:
                 print(result.select(["service", "username"]))
                 # Note: We don't display the password for security reasons
-        except Exception as e:
-            logging.error(f"Error finding entry: {e}")
+        except ValueError as e:
+            logging.error("Error finding entry: %s",e)
             print("An error occurred while searching for the entry. Please check the logs.")
 
     def check_pwned(self) -> None:
+        """
+        Checks if the password is in the pwned password list.
+
+        Parameters:
+        None
+
+        Returns:
+        None
+        """
         try:
             result = pawned(str(config.csv_path))
             print(result)
-        except Exception as e:
-            logging.error(f"Error checking pwned passwords: {e}")
+        except ValueError as e:
+            logging.error("Error checking pwned passwords:%s",e)
             print("An error occurred while checking pwned passwords. Please check the logs.")
 
     def exit_application(self):
@@ -175,6 +199,7 @@ Select an option:
         sys.exit()
 
     def run(self):
+        """Run the application"""
         while True:
             self.clear_screen()
             self.greeting()
@@ -197,6 +222,11 @@ Select an option:
                 print(e)
                 sleep(1)
 
-if __name__ == "__main__":
+def main():
+    """Main entry point for application"""
     password_manager = PasswordManager()
     password_manager.run()
+
+
+if __name__ == "__main__":
+    main()

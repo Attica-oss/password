@@ -1,6 +1,6 @@
 """Main entry point for application"""
-from src.input import main
+from src.input import PasswordManager
 
 
 if __name__ == "__main__":
-    main()  # type: ignore
+    PasswordManager().run()

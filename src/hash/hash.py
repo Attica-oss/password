@@ -6,9 +6,6 @@ import base64
 import pyargon2
 
 
-
-
-
 def generate_salt() -> bytes:
     """
     Generates a random salt.
