@@ -10,7 +10,15 @@ from src.encrypt.decrypt import decrypt_password
 
 
 def request_api_data(query_char: str) -> requests.Response:
-    """Request the API data"""
+    """Request the API data
+
+    Args:
+        query_char (str): The first 5 characters of the password
+
+    Returns:
+        requests.Response: The response from the API
+    
+    """
     url = "https://api.pwnedpasswords.com/range/" + query_char
     res = requests.get(url,timeout=10)
     if res.status_code != 200:
@@ -21,7 +29,16 @@ def request_api_data(query_char: str) -> requests.Response:
 
 
 def get_password_leak_count(hashes, hash_to_check) -> int:
-    """gets the count of leaks from the API"""
+    """gets the count of leaks from the API
+
+    Args:
+        hashes (requests.Response): The response from the API
+        hash_to_check (str): The hash to check
+
+    Returns:
+        int: The count of leaks
+    
+    """
 
     hashes = (line.split(":") for line in hashes.text.splitlines())
     for h, count in hashes:
@@ -33,6 +50,12 @@ def get_password_leak_count(hashes, hash_to_check) -> int:
 def pwned_api_check(password):
     """
     check if the password is in the response data
+
+    Args:
+        password (str): The password to check
+
+    Returns:
+        int: The count of leaks
     """
 
     passwordsha1 = hashlib.sha1(password.encode("utf-8")).hexdigest().upper()
