@@ -198,28 +198,30 @@ class PasswordManager:
         sleep(1)
         sys.exit()
 
-    def run(self):
-        """Run the application"""
+    def run(self) -> None:
+        """
+        Run the application.
+        """
         while True:
             self.clear_screen()
             self.greeting()
             try:
-                choice = int(input("Select an option: "))
-                if choice == 1:
+                option = int(input("Select an option: "))
+                if option == 1:
                     service, password, hashed_password, username = self.get_user_data()
                     df = self.create_dataframe(service, password, hashed_password, username)
                     self.save_df_csv(df)
-                elif choice == 2:
-                    service = input("Enter the service name to search: ")
-                    self.find_entry(service)
-                elif choice == 3:
+                elif option == 2:
+                    service_name = input("Enter the service name to search: ")
+                    self.find_entry(service_name)
+                elif option == 3:
                     self.check_pwned()
-                elif choice == 4:
+                elif option == 4:
                     self.exit_application()
                 else:
                     raise ValueError("Invalid choice. Please select 1, 2, 3 or 4.")
             except ValueError as e:
-                print(e)
+                print(f"Error: {e}")
                 sleep(1)
 
 def main():

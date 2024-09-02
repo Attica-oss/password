@@ -78,8 +78,16 @@ def open_csv(filename):
         return passwords
 
 
-def load_csv(filename: Path) -> list[str]:
-    """loads the csv"""
+def load_csv(filename: Path) -> list:
+    """loads the csv
+
+    Args:
+        filename (Path): The path to the csv file
+
+    Returns:
+        list: The list of passwords
+    
+    """
     return (
         pl.read_csv(filename)
         .select(pl.col("password").str.replace("\n", ""))
